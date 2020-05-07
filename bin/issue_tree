@@ -1,0 +1,43 @@
+#!/usr/bin/ruby -w
+
+require 'optparse'
+#require 'zenhub_ruby'
+require 'yaml'
+
+def auth_info(file)
+  begin
+    result = YAML.load_file(file)
+  rescue => detail
+    puts "Could not read auth file #{file}: #{detail}"
+    exit 1
+  end
+
+  result
+end
+
+options = {
+  :auth_file => File.expand_path("~/etc/zenhub/auth.yaml")
+}
+
+option_parser = OptionParser.new do |parser|
+	parser.banner = "Usage: template.rb [options]"
+
+  parser.on("-a", "--auth") do |file|
+    options[:auth_file] = file
+  end
+
+  parser.on("-h", "--help", "Print program help") do
+      puts parser.help
+      exit(0)
+  end
+end
+
+option_parser.parse!
+
+unless options.empty?
+  # Do something with the options
+end
+
+p auth_info(options[:auth_file])
+
+#client = ZenhubRuby::Client.new('ZENHUB_ACCESS_TOKEN', 'GITHUB_ACCESS_TOKEN')
