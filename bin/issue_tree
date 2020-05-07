@@ -42,9 +42,12 @@ unless options.empty?
   # Do something with the options
 end
 
+repository = ARGV.shift or raise "Must specify repository to query"
+
 auth = auth_info(options[:auth_file])
 client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
-result = client.dependencies("clicketycorp/product_planning")
+#result = client.dependencies("clicketycorp/product_planning")
+result = client.dependencies(repository)
 
 issues = ZenhubRuby::Issue::Collection.new
 
