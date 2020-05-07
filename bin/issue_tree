@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 
 require 'optparse'
-#require 'zenhub_ruby'
+require 'zenhub_ruby'
 require 'yaml'
 
 def auth_info(file)
@@ -11,6 +11,9 @@ def auth_info(file)
     puts "Could not read auth file #{file}: #{detail}"
     exit 1
   end
+
+  fail "Must provide zenhub auth token" unless result['zenhub']
+  fail "Must provide github auth token" unless result['github']
 
   result
 end
@@ -38,6 +41,6 @@ unless options.empty?
   # Do something with the options
 end
 
-p auth_info(options[:auth_file])
+auth = auth_info(options[:auth_file])
 
-#client = ZenhubRuby::Client.new('ZENHUB_ACCESS_TOKEN', 'GITHUB_ACCESS_TOKEN')
+client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
