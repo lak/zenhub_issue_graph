@@ -46,6 +46,8 @@ auth = auth_info(options[:auth_file])
 client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
 result = client.dependencies("clicketycorp/product_planning")
 
+pp result
+
 issues = ZenhubRuby::Issue::Collection.new
 
 result["dependencies"].each do |hash|
@@ -59,4 +61,7 @@ result["dependencies"].each do |hash|
   blocked_issue = issues[blocked_name]
 
   blocked_issue.blocked_by(blocking_issue)
+  blocking_issue.blocking(blocked_issue)
 end
+
+issues.print_tree
