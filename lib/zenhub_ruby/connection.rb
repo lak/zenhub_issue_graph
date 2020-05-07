@@ -6,7 +6,14 @@ module ZenhubRuby
     END_POINT = 'https://api.zenhub.io'.freeze
 
     def get(path)
-      api_connection.get(path)
+      response = api_connection.get(path)
+
+      if response.status != 200
+        p response
+        raise "GET #{path} failed: #{response.reason_phrase}"
+      end
+
+      return response.body
     end
 
     private

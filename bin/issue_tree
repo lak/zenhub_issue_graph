@@ -2,6 +2,7 @@
 
 require 'optparse'
 require 'zenhub_ruby'
+require 'zenhub_ruby/issue'
 require 'yaml'
 
 def auth_info(file)
@@ -42,5 +43,20 @@ unless options.empty?
 end
 
 auth = auth_info(options[:auth_file])
-
 client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
+result = client.dependencies("clicketycorp/product_planning")
+
+issues = ZenhubRuby::Issue::Collection.new
+
+result["dependencies"].each do |hash|
+  # Each of these dependencies is an edge. It is specified each way.
+  blocking_name = ZenhubRuby::Issue.name_from_hash(hash["blocking"])
+  blocked_name = ZenhubRuby::Issue.name_from_hash(hash["blocked"])
+  #blocking = hash["blocking"]
+  #blocked = hash["blocked"]
+
+  blocking_issue = issues[blocking_name]
+  blocked_issue = issues[blocked_name]
+
+  blocked_issue.blocked_by(blocking_issue)
+end
