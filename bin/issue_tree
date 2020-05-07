@@ -46,8 +46,6 @@ auth = auth_info(options[:auth_file])
 client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
 result = client.dependencies("clicketycorp/product_planning")
 
-pp result
-
 issues = ZenhubRuby::Issue::Collection.new
 
 result["dependencies"].each do |hash|

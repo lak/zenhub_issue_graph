@@ -9,6 +9,7 @@ class ZenhubRuby::Issue
         issue_number, repo = name.split("-")
 
         issue = ZenhubRuby::Issue.new(issue_number, repo)
+
         @issues[issue.name] = issue
       end
       return issue
@@ -52,7 +53,7 @@ class ZenhubRuby::Issue
   attr_reader :issue_number, :repo_id
 
   def self.name_from_hash(hash)
-    "#{hash['repo_id']}-#{hash['issue_number']}"
+    "#{hash['issue_number']}-#{hash['repo_id']}"
   end
 
   # We're only going to specify the edge from one direction
@@ -65,19 +66,19 @@ class ZenhubRuby::Issue
   end
 
   def blockers
-    @blocked_by.dup
+    @blocked_by
   end
 
   def initialize(issue_number, repo_id)
-    @issue_number = issue_number
-    @repo_id = repo_id
+    @issue_number = issue_number.to_i
+    @repo_id = repo_id.to_i
 
     @blocked_by = []
     @blocking = []
   end
 
   def name
-    "#{repo_id}-#{issue_number}"
+    "#{issue_number}-#{repo_id}"
   end
 
   def non_blocking?
