@@ -13,13 +13,15 @@ class ZenhubRuby::Issue::Collection
 
   def add(issue)
     @issues[issue.name] = issue
-    @graph.add_nodes(issue.to_s)
+    #@graph.add_nodes(issue.to_s)
   end
 
   def add_edge(left, right)
     left.blocked_by(right)
     right.blocking(left)
-    @graph.add_edges(left.to_s, right.to_s)
+    
+    @edges << [left, right]
+    #@graph.add_edges(left.to_s, right.to_s)
   end
 
   # Given a hash of data, create a new issue and add it to the collection,
@@ -30,7 +32,8 @@ class ZenhubRuby::Issue::Collection
     if i = self[issue.name]
       return i
     else
-      # XXX We should load issue data from github
+      # load issue data from github so we have enough info for the graph string
+      issue[:repo_name] = repository_name_from_id(issue[:repo_id])
       issue.load_from_gh(gh_client)
       self.add(issue)
       return issue
@@ -43,6 +46,13 @@ class ZenhubRuby::Issue::Collection
 
   def initialize(name, gh_client)
     @repo_name = name
+
+    @repository_cache = {}
+
+    # This is for temporary storage of edges.
+    # GraphViz can only handle strings. And we don't want to add our
+    # strings until we have all the data we want.
+    @edges = []
 
     @gh_client = gh_client
     @issues = {}
@@ -83,15 +93,26 @@ class ZenhubRuby::Issue::Collection
 
     # We should probably print the issue name and URL next
     puts "#{@indent * level}#{issue}#{epic_info}"
-    #indent = "#{@indent * level}#{issue}"
 
-    # We need the github API to get the repo name. And to get the issue title.
-    #url = "https://github.com/"
-
-    #string = "%-20s %2s %-30s %s" % [indent, epic_info, 
     issue.blockers.each do |blocker|
       print_dependencies(blocker, level + 1)
     end
+  end
+
+  def print_graph(name)
+    # First add all of the nodes to the graph
+    #graph.add_nodes(@issues.values)
+    @issues.values.each do |issue|
+      graph.add_nodes(issue.to_s)
+    end
+
+    # Then all of the edges
+    @edges.each do |left, right|
+      graph.add_edges(left.to_s, right.to_s)
+    end
+
+    # Then print
+    graph.output(png: name + ".png")
   end
 
   def print_tree
@@ -100,6 +121,18 @@ class ZenhubRuby::Issue::Collection
     tree_tops.each do |issue|
       print_dependencies(issue, level)
     end
+  end
+
+  # We were doing a ton of these calls, and they throw errors, so it seemed
+  # worth cutting the call count.
+  def repository_name_from_id(id)
+    unless name = @repository_cache[id]
+      data = gh_client.repository(id)
+      
+      @repository_cache[id] = data["full_name"]
+      name = data["full_name"]
+    end
+    name
   end
 
   # Find all unblocked issues

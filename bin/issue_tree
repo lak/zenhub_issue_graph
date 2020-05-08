@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby -w
+#!/usr/local/bin/ruby
 
 require 'optparse'
 require 'zenhub_ruby'
@@ -102,7 +102,4 @@ result["dependencies"].each do |hash|
   issues.add_edge(blocked, blocking)
 end
 
-# XXX Next step is to get the complete issue list
-# And maybe print the issue name after the number?
-#issues.print_tree
-issues.graph.output(png: "graph.png")
+issues.print_graph("graph")

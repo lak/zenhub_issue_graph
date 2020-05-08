@@ -50,8 +50,6 @@ class ZenhubRuby::Issue
   # the rest of the data.
   def load_from_gh(client)
     issue_data = client.issue(self[:repo_id], self[:issue_number])
-    repo = client.repository(self[:repo_id])
-    self[:repo_name] = repo["full_name"]
     load_from_gh_data(issue_data)
   end
 
@@ -68,8 +66,8 @@ class ZenhubRuby::Issue
     #    comment["body"]
     #  end
     #end
-#
-#      issue["comments"] = text.join("\n").gsub(/\r\n/, "\n")
+
+    # issue["comments"] = text.join("\n").gsub(/\r\n/, "\n")
   end
 
   def name
