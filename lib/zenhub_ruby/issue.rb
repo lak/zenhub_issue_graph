@@ -5,14 +5,11 @@ class ZenhubRuby::Issue
     end
 
     def [](name)
-      unless issue = @issues[name]
-        issue_number, repo = name.split("-")
+      @issues[name]
+    end
 
-        issue = ZenhubRuby::Issue.new(issue_number, repo)
-
-        @issues[issue.name] = issue
-      end
-      return issue
+    def add(issue)
+      @issues[issue.name] = issue
     end
 
     def each
@@ -30,7 +27,11 @@ class ZenhubRuby::Issue
         raise "You screwed up"
       end
 
-      puts "#{@indent * level}#{issue}"
+      epic_info = ""
+      if issue.is_epic?
+        epic_info = " *"
+      end
+      puts "#{@indent * level}#{issue}#{epic_info}"
       issue.blockers.each do |blocker|
         print_dependencies(blocker, level + 1)
       end
@@ -50,7 +51,7 @@ class ZenhubRuby::Issue
     end
   end
 
-  attr_reader :issue_number, :repo_id
+  attr_reader :issue_number, :repo_id, :url
 
   def self.name_from_hash(hash)
     "#{hash['issue_number']}-#{hash['repo_id']}"
@@ -68,10 +69,21 @@ class ZenhubRuby::Issue
   def blockers
     @blocked_by
   end
+  
+  def is_epic?
+    @is_epic
+  end
 
-  def initialize(issue_number, repo_id)
-    @issue_number = issue_number.to_i
-    @repo_id = repo_id.to_i
+  def initialize(attrs)
+    modified_attrs = {}
+    attrs.each do |name, value|
+      modified_attrs[name.intern] = value
+    end
+
+    @issue_number = modified_attrs[:issue_number].to_i
+    @repo_id = modified_attrs[:repo_id].to_i
+    @is_epic = modified_attrs[:is_epic] || false
+    @url = modified_attrs[:url]
 
     @blocked_by = []
     @blocking = []

@@ -8,6 +8,14 @@ module ZenhubRuby
 
     attr_reader :zenhub_access_token, :github
 
+    def epics(repo_name)
+      get "/p1/repositories/#{github.repo_id(repo_name)}/epics/"
+    end
+
+    def epic_data(repo_name, epic_id)
+      get "/p1/repositories/#{github.repo_id(repo_name)}/epics/#{epic_id}"
+    end
+
     def issue_data(repo_name, issue_number)
       get "/p1/repositories/#{github.repo_id(repo_name)}/issues/#{issue_number}"
     end
