@@ -13,13 +13,13 @@ class ZenhubRuby::Issue::Collection
 
   def add(issue)
     @issues[issue.name] = issue
-    @graph.add_nodes(issue.name)
+    @graph.add_nodes(issue.to_s)
   end
 
   def add_edge(left, right)
     left.blocked_by(right)
     right.blocking(left)
-    @graph.add_edges(left.name, right.name)
+    @graph.add_edges(left.to_s, right.to_s)
   end
 
   # Given a hash of data, create a new issue and add it to the collection,
@@ -31,7 +31,8 @@ class ZenhubRuby::Issue::Collection
       return i
     else
       # XXX We should load issue data from github
-      issues.add(issue)
+      issue.load_from_gh(gh_client)
+      self.add(issue)
       return issue
     end
   end
@@ -57,11 +58,10 @@ class ZenhubRuby::Issue::Collection
     load_repository_data()
 
     gh_client.list_issues(repo_name, { state: "all" }).each do |data|
-      puts data["title"]
-
       issue = ZenhubRuby::Issue.new
       issue.load_from_gh_data(data)
       issue[:repo_id] = repo[:id]
+      issue[:repo_name] = repo_name
       self.add(issue)
     end
   end

@@ -46,6 +46,15 @@ class ZenhubRuby::Issue
     @blocking = []
   end
 
+  # We have an issue number and repo number from zenhub. We need to load
+  # the rest of the data.
+  def load_from_gh(client)
+    issue_data = client.issue(self[:repo_id], self[:issue_number])
+    repo = client.repository(self[:repo_id])
+    self[:repo_name] = repo["full_name"]
+    load_from_gh_data(issue_data)
+  end
+
   def load_from_gh_data(data)
     self[:url] = data["html_url"]
     self[:title] = data["title"]
@@ -72,6 +81,6 @@ class ZenhubRuby::Issue
   end
 
   def to_s
-    name
+    "#{self[:repo_name]}##{self[:issue_number]}\n#{self[:title]}"
   end
 end
