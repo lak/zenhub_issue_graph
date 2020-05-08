@@ -4,6 +4,7 @@ require 'optparse'
 require 'zenhub_ruby'
 require 'zenhub_ruby/issue'
 require 'yaml'
+require 'ruby-graphviz'
 
 def auth_info(file)
   begin
@@ -17,6 +18,18 @@ def auth_info(file)
   fail "Must provide github auth token" unless result['github']
 
   result
+end
+
+def zenhub_client(auth)
+  ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
+  #@zenhub_client ||= ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
+  #@zenhub_client
+end
+
+def github_client(auth)
+  Octokit::Client.new :access_token => auth['github'], :auto_paginate => true
+  #@github_client ||= Octokit::Client.new :access_token => auth['github'], :auto_paginate => true
+  #@github_client
 end
 
 options = {
@@ -42,62 +55,54 @@ unless options.empty?
   # Do something with the options
 end
 
+auth = auth_info(options[:auth_file])
+
+# Init the clients
+gh_client = github_client(auth)
+zh_client = zenhub_client(auth)
+
 repository = ARGV.shift or raise "Must specify repository to query"
 
-auth = auth_info(options[:auth_file])
-client = ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
-
 # This is the graph that contains everything.
-issues = ZenhubRuby::Issue::Collection.new
+issues = ZenhubRuby::Issue::Collection.new(repository, gh_client)
+
+issues.load_issues()
 
 # Get the epics first
-result = client.epics(repository)
+result = zh_client.epics(repository)
 
 epics = []
 
 result["epic_issues"].each do |hash|
   hash[:is_epic] = true
-  issue = ZenhubRuby::Issue.new(hash)
+
+  issue = issues.add_or_find(hash)
+
   epics << issue
-  issues.add(issue)
 end
 
 # Then get the epic data
 epics.each do |epic|
-  result = client.epic_data(repository, epic.issue_number)
+  result = zh_client.epic_data(repository, epic[:issue_number])
 
   result["issues"].each do |hash|
-    issue = ZenhubRuby::Issue.new(hash)
-    issues.add(issue)
+    issue = issues.add_or_find(hash)
 
-    # Create an edge between the issue and the epic.
-    # We're kind of cheating here, because the system doesn't model this
-    # as 'blocking', but it's fine for this case.
-    epic.blocked_by(issue)
-    issue.blocking(epic)
+    issues.add_edge(epic, issue)
   end
 end
 
 # Then the dependencies
-result = client.dependencies(repository)
+result = zh_client.dependencies(repository)
 
 result["dependencies"].each do |hash|
-  blocking_name = ZenhubRuby::Issue.name_from_hash(hash["blocking"])
-  blocked_name = ZenhubRuby::Issue.name_from_hash(hash["blocked"])
+  blocking = issues.add_or_find(hash["blocking"])
+  blocked = issues.add_or_find(hash["blocked"])
 
-  unless blocking = issues[blocking_name]
-    blocking = ZenhubRuby::Issue.new(hash["blocking"])
-    issues.add(blocking)
-  end
-  unless blocked = issues[blocked_name]
-    blocked = ZenhubRuby::Issue.new(hash["blocked"])
-    issues.add(blocked)
-  end
-
-  blocked.blocked_by(blocking)
-  blocking.blocking(blocked)
+  issues.add_edge(blocked, blocking)
 end
 
 # XXX Next step is to get the complete issue list
 # And maybe print the issue name after the number?
-issues.print_tree
+#issues.print_tree
+issues.graph.output(png: "graph.png")

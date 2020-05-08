@@ -1,60 +1,18 @@
 class ZenhubRuby::Issue
-  class Collection
-    def <<(issue)
-      @issues[issue.name] = issue
-    end
-
-    def [](name)
-      @issues[name]
-    end
-
-    def add(issue)
-      @issues[issue.name] = issue
-    end
-
-    def each
-      @issues.each { |name, issue| yield(name, issue) }
-    end
-
-    def initialize
-      @issues = {}
-
-      @indent = "  "
-    end
-
-    def print_dependencies(issue, level)
-      if level > 20
-        raise "You screwed up"
-      end
-
-      epic_info = ""
-      if issue.is_epic?
-        epic_info = " *"
-      end
-      puts "#{@indent * level}#{issue}#{epic_info}"
-      issue.blockers.each do |blocker|
-        print_dependencies(blocker, level + 1)
-      end
-    end
-
-    def print_tree
-      level = 0
-
-      tree_tops.each do |issue|
-        print_dependencies(issue, level)
-      end
-    end
-
-    # Find all unblocked issues
-    def tree_tops
-      @issues.values.find_all { |issue| issue.non_blocking? }
-    end
-  end
+  require 'zenhub_ruby/issue/collection'
 
   attr_reader :issue_number, :repo_id, :url
 
   def self.name_from_hash(hash)
     "#{hash['issue_number']}-#{hash['repo_id']}"
+  end
+
+  def [](name)
+    @attrs[name.intern]
+  end
+
+  def []=(name, value)
+    @attrs[name.intern] = value
   end
 
   # We're only going to specify the edge from one direction
@@ -74,19 +32,35 @@ class ZenhubRuby::Issue
     @is_epic
   end
 
-  def initialize(attrs)
-    modified_attrs = {}
+  def initialize(attrs = {})
+    @attrs = {}
+
     attrs.each do |name, value|
-      modified_attrs[name.intern] = value
+      self[name] = value
     end
 
-    @issue_number = modified_attrs[:issue_number].to_i
-    @repo_id = modified_attrs[:repo_id].to_i
-    @is_epic = modified_attrs[:is_epic] || false
-    @url = modified_attrs[:url]
+    self[:repo_id] = self[:repo_id].to_i
+    self[:issue_number] = self[:issue_number].to_i
 
     @blocked_by = []
     @blocking = []
+  end
+
+  def load_from_gh_data(data)
+    self[:url] = data["html_url"]
+    self[:title] = data["title"]
+    self[:state] = data["state"]
+    self[:issue_number] = data["number"]
+
+    text = [ data["body"] ]
+    self[:text] = text
+    #if data["comments"] > 0
+    #  text += client.issue_comments(repo_name, issue["number"]).map do |comment|
+    #    comment["body"]
+    #  end
+    #end
+#
+#      issue["comments"] = text.join("\n").gsub(/\r\n/, "\n")
   end
 
   def name
