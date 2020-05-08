@@ -64,7 +64,7 @@ class ZenhubRuby::Issue
   end
 
   def name
-    "#{issue_number}-#{repo_id}"
+    "#{self[:issue_number]}-#{self[:repo_id]}"
   end
 
   def non_blocking?
