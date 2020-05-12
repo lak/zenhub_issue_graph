@@ -1,6 +1,6 @@
 require 'octokit'
 
-module ZenhubRuby
+module IssueGraph
   class Github
     attr_reader :auth
 

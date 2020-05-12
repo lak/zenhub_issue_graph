@@ -1,7 +1,7 @@
 require 'faraday'
 require 'faraday_middleware'
 
-module ZenhubRuby
+module IssueGraph
   module Connection
     END_POINT = 'https://api.zenhub.io'.freeze
 
@@ -27,7 +27,7 @@ module ZenhubRuby
         builder: middleware,
         headers: {
           accept: 'application/json',
-          user_agent: "ZenhubRuby v#{VERSION}",
+          user_agent: "IssueGraph v#{VERSION}",
           x_authentication_token: zenhub_access_token
         }
       }

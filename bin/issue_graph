@@ -1,8 +1,7 @@
 #!/usr/local/bin/ruby
 
 require 'optparse'
-require 'zenhub_ruby'
-require 'zenhub_ruby/issue'
+require 'issue_graph'
 require 'yaml'
 require 'ruby-graphviz'
 
@@ -21,8 +20,8 @@ def auth_info(file)
 end
 
 def zenhub_client(auth)
-  ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
-  #@zenhub_client ||= ZenhubRuby::Client.new(auth['zenhub'], auth['github'])
+  IssueGraph::ZenhubClient.new(auth['zenhub'], auth['github'])
+  #@zenhub_client ||= IssueGraph::Client.new(auth['zenhub'], auth['github'])
   #@zenhub_client
 end
 
@@ -64,7 +63,7 @@ zh_client = zenhub_client(auth)
 repository = ARGV.shift or raise "Must specify repository to query"
 
 # This is the graph that contains everything.
-issues = ZenhubRuby::Issue::Collection.new(repository, gh_client)
+issues = IssueGraph::Issue::Collection.new(repository, gh_client)
 
 issues.load_issues()
 

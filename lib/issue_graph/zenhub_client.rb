@@ -1,9 +1,9 @@
-require 'zenhub_ruby/connection'
-require 'zenhub_ruby/github'
-require 'zenhub_ruby/version'
+require 'issue_graph/connection'
+require 'issue_graph/github'
+require 'issue_graph/version'
 
-module ZenhubRuby
-  class Client
+module IssueGraph
+  class ZenhubClient
     include Connection
 
     attr_reader :zenhub_access_token, :github
@@ -34,7 +34,7 @@ module ZenhubRuby
 
     def initialize(zenhub_access_token, github_access_token)
       @zenhub_access_token = zenhub_access_token
-      @github = ZenhubRuby::Github.new(github_access_token)
+      @github = IssueGraph::Github.new(github_access_token)
     end
   end
 end

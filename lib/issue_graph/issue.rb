@@ -1,6 +1,4 @@
-class ZenhubRuby::Issue
-  require 'zenhub_ruby/issue/collection'
-
+class IssueGraph::Issue
   attr_reader :issue_number, :repo_id, :url
 
   def self.name_from_hash(hash)

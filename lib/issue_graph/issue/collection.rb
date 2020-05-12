@@ -1,6 +1,7 @@
 require 'ruby-graphviz'
+require 'issue_graph/issue'
 
-class ZenhubRuby::Issue::Collection
+class IssueGraph::Issue::Collection
   attr_reader :graph, :repo_name, :repo, :gh_client
 
   def <<(issue)
@@ -27,7 +28,7 @@ class ZenhubRuby::Issue::Collection
   # Given a hash of data, create a new issue and add it to the collection,
   # or find an existing issue. Return the result.
   def add_or_find(hash)
-    issue = ZenhubRuby::Issue.new(hash)
+    issue = IssueGraph::Issue.new(hash)
 
     if i = self[issue.name]
       return i
@@ -68,7 +69,7 @@ class ZenhubRuby::Issue::Collection
     load_repository_data()
 
     gh_client.list_issues(repo_name, { state: "all" }).each do |data|
-      issue = ZenhubRuby::Issue.new
+      issue = IssueGraph::Issue.new
       issue.load_from_gh_data(data)
       issue[:repo_id] = repo[:id]
       issue[:repo_name] = repo_name
