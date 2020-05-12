@@ -1,6 +1,8 @@
 class IssueGraph::Issue
   attr_reader :issue_number, :repo_id, :url
 
+  attr_accessor :node
+
   def self.name_from_hash(hash)
     "#{hash['issue_number']}-#{hash['repo_id']}"
   end
@@ -25,9 +27,36 @@ class IssueGraph::Issue
   def blockers
     @blocked_by
   end
+
+  # Add information to the graph node based on the issue itself.
+  def decorate_graph_node
+    # Epic vs normal determines shape and edge color
+    # Main repo vs other repo determines color
+
+    # Everyone
+    style = %w{filled}
+    node[:shape] = "box"
+
+    if is_epic?
+      style << "rounded"
+      node[:color] = "crimson"
+    end
+
+    if in_target_repo?
+      node[:fillcolor] = "gold"
+    else
+      node[:fillcolor] = "cornsilk"
+    end
+
+    node[:style] = style.join(",")
+  end
   
+  def in_target_repo?
+    self[:in_target_repo]
+  end
+
   def is_epic?
-    @is_epic
+    self[:is_epic]
   end
 
   def initialize(attrs = {})

@@ -102,14 +102,15 @@ class IssueGraph::Issue::Collection
 
   def print_graph(name)
     # First add all of the nodes to the graph
-    #graph.add_nodes(@issues.values)
     @issues.values.each do |issue|
-      graph.add_nodes(issue.to_s)
+      issue.node = graph.add_nodes(issue.to_s)
+
+      issue.decorate_graph_node
     end
 
     # Then all of the edges
     @edges.each do |left, right|
-      graph.add_edges(left.to_s, right.to_s)
+      graph.add_edges(left.node, right.node)
     end
 
     # Then print

@@ -72,13 +72,21 @@ result = zh_client.epics(repository)
 
 epics = []
 
+
 result["epic_issues"].each do |hash|
-  hash[:is_epic] = true
 
   issue = issues.add_or_find(hash)
+  issue[:is_epic] = true
+
+  unless issue.is_epic?
+    raise "Epic not epic"
+  end
 
   epics << issue
 end
+
+# We need this to color the box correctly
+target_repo_id = epics[0][:repo_id]
 
 # Then get the epic data
 epics.each do |epic|
@@ -99,6 +107,13 @@ result["dependencies"].each do |hash|
   blocked = issues.add_or_find(hash["blocked"])
 
   issues.add_edge(blocked, blocking)
+end
+
+# For coloring the node in the graph
+issues.each do |name, issue|
+  if issue[:repo_id] == target_repo_id
+    issue[:in_target_repo] = true
+  end
 end
 
 issues.print_graph("graph")
