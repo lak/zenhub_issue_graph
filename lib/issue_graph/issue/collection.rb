@@ -2,7 +2,7 @@ require 'ruby-graphviz'
 require 'issue_graph/issue'
 
 class IssueGraph::Issue::Collection
-  attr_reader :graph, :repo_name, :repo, :gh_client
+  attr_reader :graph, :repo_name, :repo, :gh_client, :zh_client
 
   def <<(issue)
     @issues[issue.name] = issue
@@ -41,13 +41,80 @@ class IssueGraph::Issue::Collection
     end
   end
 
+  # This is the core function of this class. It adds all of the issues from
+  # the main repo into the graph, loads epics, and then adds all of the edges.
+  def build_issue_graph
+    load_issues()
+
+    # Get the epics first
+    result = zh_client.epics(repo_name)
+
+    epics = []
+
+    result["epic_issues"].each do |hash|
+
+      issue = add_or_find(hash)
+      issue[:is_epic] = true
+
+      unless issue.is_epic?
+        raise "Epic not epic"
+      end
+
+      epics << issue
+    end
+
+    # We need this to color the box correctly
+    target_repo_id = epics[0][:repo_id]
+
+    # Then get the epic data
+    epics.each do |epic|
+      result = zh_client.epic_data(repo_name, epic[:issue_number])
+
+      result["issues"].each do |hash|
+        issue = add_or_find(hash)
+
+        add_edge(epic, issue)
+      end
+    end
+
+    # Then the dependencies
+    result = zh_client.dependencies(repo_name)
+
+    result["dependencies"].each do |hash|
+      blocking = add_or_find(hash["blocking"])
+      blocked = add_or_find(hash["blocked"])
+
+      add_edge(blocked, blocking)
+    end
+
+    # For coloring the node in the graph
+    self.each do |name, issue|
+      if issue[:repo_id] == target_repo_id
+        issue[:in_target_repo] = true
+      end
+    end
+  end
+
   def each
     @issues.each { |name, issue| yield(name, issue) }
   end
 
-  def initialize(name, gh_client)
+  def init_zenhub_client(auth)
+    @zh_client = IssueGraph::ZenhubClient.new(auth['zenhub'], auth['github'])
+  end
+
+  def init_github_client(auth)
+    @gh_client = Octokit::Client.new :access_token => auth['github'], :auto_paginate => true
+  end
+
+  def initialize(name, auth)
     @repo_name = name
 
+    # Init the clients
+    init_github_client(auth)
+    init_zenhub_client(auth)
+
+    # Try to hold down the number of lookups from id to name
     @repository_cache = {}
 
     # This is for temporary storage of edges.
@@ -55,7 +122,6 @@ class IssueGraph::Issue::Collection
     # strings until we have all the data we want.
     @edges = []
 
-    @gh_client = gh_client
     @issues = {}
 
     @graph = GraphViz.new(:G, :type => :digraph, rankdir: "LR")

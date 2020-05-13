@@ -19,18 +19,6 @@ def auth_info(file)
   result
 end
 
-def zenhub_client(auth)
-  IssueGraph::ZenhubClient.new(auth['zenhub'], auth['github'])
-  #@zenhub_client ||= IssueGraph::Client.new(auth['zenhub'], auth['github'])
-  #@zenhub_client
-end
-
-def github_client(auth)
-  Octokit::Client.new :access_token => auth['github'], :auto_paginate => true
-  #@github_client ||= Octokit::Client.new :access_token => auth['github'], :auto_paginate => true
-  #@github_client
-end
-
 options = {
   :auth_file => File.expand_path("~/etc/zenhub/auth.yaml")
 }
@@ -50,70 +38,11 @@ end
 
 option_parser.parse!
 
-unless options.empty?
-  # Do something with the options
-end
-
 auth = auth_info(options[:auth_file])
-
-# Init the clients
-gh_client = github_client(auth)
-zh_client = zenhub_client(auth)
-
 repository = ARGV.shift or raise "Must specify repository to query"
 
 # This is the graph that contains everything.
-issues = IssueGraph::Issue::Collection.new(repository, gh_client)
+issues = IssueGraph::Issue::Collection.new(repository, auth)
 
-issues.load_issues()
-
-# Get the epics first
-result = zh_client.epics(repository)
-
-epics = []
-
-
-result["epic_issues"].each do |hash|
-
-  issue = issues.add_or_find(hash)
-  issue[:is_epic] = true
-
-  unless issue.is_epic?
-    raise "Epic not epic"
-  end
-
-  epics << issue
-end
-
-# We need this to color the box correctly
-target_repo_id = epics[0][:repo_id]
-
-# Then get the epic data
-epics.each do |epic|
-  result = zh_client.epic_data(repository, epic[:issue_number])
-
-  result["issues"].each do |hash|
-    issue = issues.add_or_find(hash)
-
-    issues.add_edge(epic, issue)
-  end
-end
-
-# Then the dependencies
-result = zh_client.dependencies(repository)
-
-result["dependencies"].each do |hash|
-  blocking = issues.add_or_find(hash["blocking"])
-  blocked = issues.add_or_find(hash["blocked"])
-
-  issues.add_edge(blocked, blocking)
-end
-
-# For coloring the node in the graph
-issues.each do |name, issue|
-  if issue[:repo_id] == target_repo_id
-    issue[:in_target_repo] = true
-  end
-end
-
+issues.build_issue_graph()
 issues.print_graph("graph")
