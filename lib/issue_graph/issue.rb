@@ -35,7 +35,12 @@ class IssueGraph::Issue
 
     # Everyone
     style = %w{filled}
-    node[:shape] = "box"
+    if self[:state] == "open"
+      node[:shape] = "box"
+    else
+      node[:shape] = "octagon"
+      style << "dotted"
+    end
 
     if is_epic?
       style << "rounded"
