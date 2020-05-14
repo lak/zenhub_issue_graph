@@ -26,13 +26,33 @@ options = {
 }
 
 option_parser = OptionParser.new do |parser|
-	parser.banner = "Usage: template.rb [options]"
+	parser.banner = "Usage: issue_graph [-a <file>] [-c] <github_user/repository_name>
+Create a PNG of the dependency graph in a zenhub repository.
 
-  parser.on("-a", "--auth") do |file|
+Epics are rounded, with a red border. Everything else (except
+closed tickets) is a rectangle.
+
+Tickets from the specified repository are always gold. Every
+other repository gets a custom (random) color.
+
+You must provide an auth file with both a zenhub and github auth
+token. Format is in yaml:
+  zenhub: <token>
+  github: <token>
+
+The default location is ~/etc/zenhub/auth.yaml. You can change it
+with the -a|--auth flag.
+
+We default to not graphing closed tickets. If you want them, use
+--include_closed_tickets. They will have a dotted border, and be an octagon,
+instead of a solid border on a rectangle.
+"
+
+  parser.on("-a", "--auth", "Specify where the auth tokens are.") do |file|
     options[:auth_file] = file
   end
 
-  parser.on("-c", "--include_closed_tickets") do |file|
+  parser.on("-c", "--include_closed_tickets", "Include closed tickets in the graph.") do |file|
     options[:closed_tickets] = true
   end
 
