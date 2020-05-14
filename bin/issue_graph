@@ -22,7 +22,7 @@ end
 options = {
   :auth_file => File.expand_path("~/etc/zenhub/auth.yaml"),
   # Default to exluding closed tickets
-  :closed_tickets => false
+  :closed_tickets => false,
 }
 
 option_parser = OptionParser.new do |parser|
@@ -35,30 +35,47 @@ closed tickets) is a rectangle.
 Tickets from the specified repository are always gold. Every
 other repository gets a custom (random) color.
 
-You must provide an auth file with both a zenhub and github auth
-token. Format is in yaml:
-  zenhub: <token>
-  github: <token>
-
-The default location is ~/etc/zenhub/auth.yaml. You can change it
-with the -a|--auth flag.
-
-We default to not graphing closed tickets. If you want them, use
---include_closed_tickets. They will have a dotted border, and be an octagon,
-instead of a solid border on a rectangle.
 "
 
-  parser.on("-a", "--auth", "Specify where the auth tokens are.") do |file|
+  h = "Specify the auth file.
+
+    You must provide an auth file with both a zenhub and github auth
+    token. Format is in yaml:
+      zenhub: <token>
+      github: <token>
+
+    The default location is ~/etc/zenhub/auth.yaml.
+
+"
+  parser.on("-a", "--auth", h) do |file|
     options[:auth_file] = file
   end
 
-  parser.on("-c", "--include_closed_tickets", "Include closed tickets in the graph.") do |file|
+  h = "Include closed tickets in the graph.
+
+    We default to not graphing closed tickets. They will have a dotted border,
+    and be an octagon, instead of a solid border on a rectangle.
+
+"
+  parser.on("-c", "--include_closed_tickets", h) do |file|
     options[:closed_tickets] = true
   end
 
   parser.on("-h", "--help", "Print program help") do
       puts parser.help
       exit(0)
+  end
+
+  h = "What to name the output file.
+
+    Defaults to repo name.
+
+    Do not provide the file extension. It is always a PNG file,
+    so we handle the extension.
+
+"
+  parser.on("-o", "--output_file_name", h) do |file|
+    options[:file_name] = file
   end
 end
 
@@ -71,4 +88,6 @@ repository = ARGV.shift or raise "Must specify repository to query"
 issues = IssueGraph::Issue::Collection.new(repository, auth)
 
 issues.build_issue_graph()
-issues.print_graph("graph", options[:closed_tickets])
+name = options[:file_name] || repository.sub(%r{.+/}, '')
+
+issues.print_graph(name, options[:closed_tickets])
