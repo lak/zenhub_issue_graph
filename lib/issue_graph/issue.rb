@@ -37,26 +37,13 @@ class IssueGraph::Issue
     style = %w{filled}
     node[:shape] = "box"
 
-    # This will need to be done differently.
-    # Ideally I'd color each repo a different color.
-    color_list = %w{cornsilk azure aquamarine cyan2 darksalmon cadetblue1 gray greenyellow palegreen olivedrab1 plum1 pink1 sandybrown}
-
     if is_epic?
       style << "rounded"
       node[:color] = "crimson"
     end
 
-    if in_target_repo?
-      node[:fillcolor] = "gold"
-    else
-      node[:fillcolor] = "cornsilk"
-    end
-
+    node[:fillcolor] = self[:fillcolor] || raise("Got no color for #{self}!")
     node[:style] = style.join(",")
-  end
-  
-  def in_target_repo?
-    self[:in_target_repo]
   end
 
   def is_epic?
