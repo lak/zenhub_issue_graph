@@ -49,7 +49,7 @@ class IssueGraph::Issue::Collection
   def build_issue_graph
     load_issues()
 
-    # Then get the epic data
+    # Then get the epics and their included tickets.
     load_epics()
 
     # Then the dependencies
@@ -138,13 +138,8 @@ class IssueGraph::Issue::Collection
     epics = []
 
     result["epic_issues"].each do |hash|
-
       issue = add_or_find(hash)
       issue[:is_epic] = true
-
-      unless issue.is_epic?
-        raise "Epic not epic"
-      end
 
       epics << issue
     end
@@ -198,17 +193,25 @@ class IssueGraph::Issue::Collection
     end
   end
 
-  def print_graph(name)
+  def print_graph(name, include_closed_issues)
+    closed = []
     # First add all of the nodes to the graph
     @issues.values.each do |issue|
-      issue.node = graph.add_nodes(issue.to_s)
-
-      issue.decorate_graph_node
+      # Skip closed issues.
+      if issue[:state] != "closed" or include_closed_issues
+        issue.node = graph.add_nodes(issue.to_s)
+        issue.decorate_graph_node
+      else
+        closed << issue[:id]
+      end
     end
 
     # Then all of the edges
     @edges.each do |left, right|
-      graph.add_edges(left.node, right.node)
+      # Skip edges to closed issues
+      unless closed.include?(left[:id]) or closed.include?(right[:id])
+        graph.add_edges(left.node, right.node)
+      end
     end
 
     # Then print

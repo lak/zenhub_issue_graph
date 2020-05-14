@@ -73,6 +73,7 @@ class IssueGraph::Issue
 
   def load_from_gh_data(data)
     self[:url] = data["html_url"]
+    self[:id] = data["id"]
     self[:title] = data["title"]
     self[:state] = data["state"]
     self[:issue_number] = data["number"]

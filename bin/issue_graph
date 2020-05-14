@@ -20,7 +20,9 @@ def auth_info(file)
 end
 
 options = {
-  :auth_file => File.expand_path("~/etc/zenhub/auth.yaml")
+  :auth_file => File.expand_path("~/etc/zenhub/auth.yaml"),
+  # Default to exluding closed tickets
+  :closed_tickets => false
 }
 
 option_parser = OptionParser.new do |parser|
@@ -28,6 +30,10 @@ option_parser = OptionParser.new do |parser|
 
   parser.on("-a", "--auth") do |file|
     options[:auth_file] = file
+  end
+
+  parser.on("-c", "--include_closed_tickets") do |file|
+    options[:closed_tickets] = true
   end
 
   parser.on("-h", "--help", "Print program help") do
@@ -45,4 +51,4 @@ repository = ARGV.shift or raise "Must specify repository to query"
 issues = IssueGraph::Issue::Collection.new(repository, auth)
 
 issues.build_issue_graph()
-issues.print_graph("graph")
+issues.print_graph("graph", options[:closed_tickets])
