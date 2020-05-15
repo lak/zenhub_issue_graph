@@ -193,7 +193,12 @@ class IssueGraph::Issue::Collection
     end
   end
 
-  def print_graph(name, include_closed_issues)
+  def print_graph(name, options = {})
+    include_closed_issues = options[:include_closed_issues]
+
+    # This must be an array
+    formats = options[:formats]
+
     closed = []
     # First add all of the nodes to the graph
     @issues.values.each do |issue|
@@ -215,7 +220,10 @@ class IssueGraph::Issue::Collection
     end
 
     # Then print
-    graph.output(png: name + ".png")
+    formats.each do |format|
+      puts "printing #{format}"
+      graph.output(format => name + ".#{format}")
+    end
   end
 
   def print_tree

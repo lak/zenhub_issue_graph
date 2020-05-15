@@ -23,6 +23,7 @@ options = {
   :auth_file => File.expand_path("~/etc/zenhub/auth.yaml"),
   # Default to exluding closed tickets
   :closed_tickets => false,
+  :format => %w{png}
 }
 
 option_parser = OptionParser.new do |parser|
@@ -61,6 +62,27 @@ other repository gets a custom (random) color.
     options[:closed_tickets] = true
   end
 
+  h = "Specify the output format.
+
+    Defaults to PNG. Can also print SVG. Multiple values must
+    be comma-separated.
+
+"
+  parser.on("-f <format(s)>", "--format <format(s)>", h) do |format|
+    formats = format.downcase.split(",")
+
+    valid_formats = %w{png svg}
+
+    formats.each do |f|
+      unless valid_formats.include?(f)
+        puts "Invalid format #{f.inspect}; valid formats are png, svg"
+        exit(3)
+      end
+    end
+
+    options[:format] = formats
+  end
+
   parser.on("-h", "--help", "Print program help") do
       puts parser.help
       exit(0)
@@ -90,4 +112,4 @@ issues = IssueGraph::Issue::Collection.new(repository, auth)
 issues.build_issue_graph()
 name = options[:file_name] || repository.sub(%r{.+/}, '')
 
-issues.print_graph(name, options[:closed_tickets])
+issues.print_graph(name, :formats => options[:format], :include_closed_tickets => options[:closed_tickets])
