@@ -221,7 +221,6 @@ class IssueGraph::Issue::Collection
 
     # Then print
     formats.each do |format|
-      puts "printing #{format}"
       graph.output(format => name + ".#{format}")
     end
   end
